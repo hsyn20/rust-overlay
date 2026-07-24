@@ -15,25 +15,26 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Grant execute permission for gradlew
+      - name: Find Project and Build APK
         run: |
-          if [ -f "app/gradlew" ]; then
-            chmod +x app/gradlew
-          elif [ -f "gradlew" ]; then
-            chmod +x gradlew
-          else
-            # إنشاء ملف gradlew تلقائياً لو غير موجود لضمان نجاح البناء
-            gradle wrapper
+          # البحث التلقائي عن مجلد المشروع والانتقال بداخله فوراً
+          PROJECT_DIR=$(find . -maxdepth 2 -type d -name "*RustOverlay*" | head -n 1)
+          if [ -z "$PROJECT_DIR" ]; then
+            PROJECT_DIR="."
           fi
+          echo "Using project directory: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          
+          # توليد أداة البناء وبناء التطبيق
+          gradle wrapper
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      - name: Build Debug APK with Gradle
-        run: |
-          if [ -f "gradlew" ]; then
-            ./gradlew assembleDebug
-          else
-            # بناء باستخدام Gradle العام لو الـ wrapper غير موجود
-            gradle assembleDebug
-          fi
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-debug
+          path: '**/build/outputs/apk/debug/*.apk'
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v3
