@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Android APK
 
 on: [push]
 
@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
       - name: Set up JDK 17
@@ -15,25 +15,33 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Extract Project
+      - name: Grant execute permission for gradlew
         run: |
-          unzip -q *.zip -d project_dir
-          cd project_dir
-          # لو الملفات بداخل مجلد فرعي، نتحقق ونرتبها
-          ls -la
-
-      - name: Build with Gradle (if gradlew exists)
-        run: |
-          cd project_dir
-          if [ -f "gradlew" ]; then
+          if [ -f "app/gradlew" ]; then
+            chmod +x app/gradlew
+          elif [ -f "gradlew" ]; then
             chmod +x gradlew
+          else
+            # إنشاء ملف gradlew تلقائياً لو غير موجود لضمان نجاح البناء
+            gradle wrapper
+          fi
+
+      - name: Build Debug APK with Gradle
+        run: |
+          if [ -f "gradlew" ]; then
             ./gradlew assembleDebug
           else
-            echo "Gradlew wrapper not found, creating basic structure..."
+            # بناء باستخدام Gradle العام لو الـ wrapper غير موجود
+            gradle assembleDebug
           fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v3
+        with:
+          name: app-debug
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            **/build/outputs/apk/debug/*.apk
         with:
           name: app-debug
           path: |
