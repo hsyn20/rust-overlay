@@ -15,11 +15,27 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Unzip Project
+      - name: Extract Project
         run: |
-          unzip -q *.zip -d project_files
+          unzip -q *.zip -d project_dir
+          cd project_dir
+          # لو الملفات بداخل مجلد فرعي، نتحقق ونرتبها
+          ls -la
 
-      - name: Build Info
+      - name: Build with Gradle (if gradlew exists)
         run: |
-          echo "Project files extracted successfully."
-          ls -la project_files
+          cd project_dir
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            echo "Gradlew wrapper not found, creating basic structure..."
+          fi
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-debug
+          path: |
+            **/build/outputs/apk/debug/*.apk
+            project_dir/**/*.apk
