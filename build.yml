@@ -15,17 +15,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Find Project and Build APK
+      - name: Locate Build & Compile APK
         run: |
-          # البحث التلقائي عن مجلد المشروع والانتقال بداخله فوراً
-          PROJECT_DIR=$(find . -maxdepth 2 -type d -name "*RustOverlay*" | head -n 1)
-          if [ -z "$PROJECT_DIR" ]; then
-            PROJECT_DIR="."
+          # العثور تلقائياً على مجلد الأندرويد وبناء التطبيق
+          if [ -d "app" ]; then
+            cd .
+          elif [ -d "RustOverlayProject" ]; then
+            cd RustOverlayProject
+          else
+            cd $(find . -maxdepth 2 -type d -name "*app*" | head -n 1)
           fi
-          echo "Using project directory: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
           
-          # توليد أداة البناء وبناء التطبيق
+          # إعداد الجريدل والبناء
           gradle wrapper
           chmod +x gradlew
           ./gradlew assembleDebug
@@ -34,6 +35,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: app-debug
+          path: '**/build/outputs/apk/debug/*.apk'
           path: '**/build/outputs/apk/debug/*.apk'
 
       - name: Upload APK Artifact
